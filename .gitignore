@@ -10,6 +10,9 @@ dist
 game_package
 data/engine/
 data/maps/
+data/pool/
+data/packages/
+data/rapid/
 
 # spring-launcher temporary files
 Settings

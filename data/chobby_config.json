@@ -1,0 +1,9 @@
+{
+  "server": {
+    "address": "server4.beyondallreason.info",
+    "port": 8200,
+    "protocol": "spring",
+    "serverName": "BAR"
+  },
+  "game": "byar"
+}
