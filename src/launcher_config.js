@@ -129,6 +129,74 @@ function mergeDeep(target, ...sources) {
 	return mergeDeep(target, ...sources);
 }
 
+function applyModdedConfig(conf) {
+        try {
+                const writePath = resolveWritePath(conf.title);
+                const moddedConfigFile = path.join(writePath, 'modded-config.json');
+
+                if (!fs.existsSync(moddedConfigFile)) {
+                        return conf;
+                }
+
+                console.log(`Loading Modded Config file: ${moddedConfigFile}`);
+
+                const moddedConfig = JSON.parse(
+                        fs.readFileSync(moddedConfigFile)
+                );
+
+                for (const setup of conf.setups) {
+                        const setupId = setup.package && setup.package.id;
+                        const override = moddedConfig.profiles &&
+                                moddedConfig.profiles[setupId];
+
+                        if (!override) {
+                                continue;
+                        }
+
+                        if (override.env_variables) {
+                                setup.env_variables = {
+                                        ...(setup.env_variables || {}),
+                                        ...override.env_variables,
+                                };
+                        }
+
+                        if (override.downloads && override.downloads.games_add) {
+                                setup.downloads = setup.downloads || {};
+                                setup.downloads.games = [
+                                        ...new Set([
+                                                ...(setup.downloads.games || []),
+                                                ...override.downloads.games_add,
+                                        ]),
+                                ];
+                        }
+
+                        if (override.launch) {
+                                setup.launch = setup.launch || {};
+
+                                if (override.launch.start_args) {
+                                        setup.launch.start_args =
+                                                override.launch.start_args;
+                                }
+
+                                if (override.launch.springsettings) {
+                                        setup.launch.springsettings = {
+                                                ...(setup.launch.springsettings || {}),
+                                                ...override.launch.springsettings,
+                                        };
+                                }
+                        }
+
+                        console.log(`Applied Modded Config to profile: ${setupId}`);
+                }
+
+                return conf;
+        } catch (err) {
+                console.error('Cannot load modded-config.json. Using normal BAR config.');
+                console.error(err);
+                return conf;
+        }
+}
+
 function loadConfig() {
 	// 1. argv.config should override any existing setting
 	if (argv.config) {
@@ -144,11 +212,12 @@ function loadConfig() {
 		const writePath = resolveWritePath(conf.title);
 		const configFile = path.join(writePath, 'config.json');
 		if (!fs.existsSync(configFile)) {
-			return conf;
+			return applyModdedConfig(conf);
 		}
 
 		console.log(`Loading Config file: ${configFile}`);
-		return JSON.parse(fs.readFileSync(configFile));
+		const loadedConfig = JSON.parse(fs.readFileSync(configFile));
+		return applyModdedConfig(loadedConfig);
 	} catch (err) {
 		// TODO: Perhaps too early to log at this point? We'll use console instead
 		console.error('Cannot load local config.json. Falling back to default one.');
@@ -316,9 +385,10 @@ const proxy = new Proxy({
 });
 
 module.exports = {
-	config: proxy,
-	applyDefaults: applyDefaults,
-	hotReloadSafe: hotReloadSafe,
-	reloadConfig: reloadConfig,
-	validateNewConfig: validateNewConfig
+        config: proxy,
+        applyDefaults: applyDefaults,
+        applyModdedConfig: applyModdedConfig,
+        hotReloadSafe: hotReloadSafe,
+        reloadConfig: reloadConfig,
+        validateNewConfig: validateNewConfig
 };

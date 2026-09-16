@@ -8,11 +8,12 @@ const { renameSyncWithRetry } = require('./fs_utils');
 const { app, BrowserWindow, dialog } = require('electron');
 const { writePath } = require('./spring_platform');
 const {
-	applyDefaults,
-	hotReloadSafe,
-	reloadConfig,
-	validateNewConfig,
-	config,
+        applyDefaults,
+        applyModdedConfig,
+        hotReloadSafe,
+        reloadConfig,
+        validateNewConfig,
+        config,
 } = require('./launcher_config');
 
 function handleConfigUpdate(newConfig) {
@@ -21,6 +22,8 @@ function handleConfigUpdate(newConfig) {
 	const newConfigStr = JSON.stringify(newConfig, null, 4);
 
 	newConfig = applyDefaults(newConfig);
+	newConfig = applyModdedConfig(newConfig);
+
 	const reloadType = hotReloadSafe(newConfig);
 
 	const finalConfigPath = path.join(writePath, 'config.json');

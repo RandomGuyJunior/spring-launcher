@@ -40,7 +40,7 @@
             "launch": {
                 "start_args": [
                     "--menu",
-                    "rapid://modded-chobby:test"
+                    "rapid://byar-chobby:test"
                 ],
                 "engine": "recoil_2026.07.04",
                 "springsettings": {
@@ -85,7 +85,7 @@
             "launch": {
                 "start_args": [
                     "--menu",
-                    "rapid://modded-chobby:test"
+                    "rapid://byar-chobby:test"
                 ],
                 "engine": "recoil_2026.07.04",
                 "springsettings": {
@@ -130,7 +130,7 @@
             "launch": {
                 "start_args": [
                     "--menu",
-                    "rapid://modded-chobby:test"
+                    "rapid://byar-chobby:test"
                 ],
                 "engine": "recoil_2026.07.03",
                 "springsettings": {
@@ -175,7 +175,7 @@
             "launch": {
                 "start_args": [
                     "--menu",
-                    "rapid://modded-chobby:test"
+                    "rapid://byar-chobby:test"
                 ],
                 "engine": "recoil_2026.07.03",
                 "springsettings": {
@@ -210,7 +210,7 @@
             "launch": {
                 "start_args": [
                     "--menu",
-                    "rapid://modded-chobby:test"
+                    "BYAR Chobby $VERSION"
                 ],
                 "engine": "recoil_2026.07.04"
             }
@@ -242,7 +242,7 @@
             "launch": {
                 "start_args": [
                     "--menu",
-                    "rapid://modded-chobby:test"
+                    "BYAR Chobby $VERSION"
                 ],
                 "engine": "recoil_2026.07.04"
             }
@@ -362,9 +362,9 @@
         "application_id": "1185990483143569448",
         "minimap_url": "https://maps-metadata.beyondallreason.dev/latest/discordPresenceThumb/redir.<map>.1024.jpg",
         "large_image_key_default": "barlogobox",
-        "large_image_text_default": "Modded Beyond All Reason",
+        "large_image_text_default": "Beyond All Reason",
         "small_image_key_default": "barlogobox",
-        "small_image_text_default": "Modded Beyond All Reason",
+        "small_image_text_default": "Beyond All Reason",
         "button_label": "Play",
         "button_url": "https://www.beyondallreason.info/"
     }
