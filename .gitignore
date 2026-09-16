@@ -8,7 +8,8 @@ dist
 
 # spring-launcher downloads
 game_package
-data
+data/engine/
+data/maps/
 
 # spring-launcher temporary files
 Settings
