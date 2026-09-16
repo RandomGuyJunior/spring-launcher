@@ -17,3 +17,8 @@ data/rapid/
 # spring-launcher temporary files
 Settings
 src/config.json
+
+# Old Chobby stuff
+devmode.txt
+*code-workspace
+.vscode/settings.json
