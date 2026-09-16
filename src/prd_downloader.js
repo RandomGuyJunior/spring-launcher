@@ -14,7 +14,7 @@ class PrdDownloader extends EventEmitter {
 		this.progressPattern = new RegExp('[0-9]+/[0-9]+');
 	}
 
-	downloadPackage(name, args) {
+	downloadPackage(name, args, envOverrides = {}) {
 		let finished = false;
 
 		if (!fs.existsSync(springPlatform.prDownloaderPath)) {
@@ -32,7 +32,12 @@ class PrdDownloader extends EventEmitter {
 			return;
 		}
 
-		const prd = spawn(springPlatform.prDownloaderPath, args);
+		const prd = spawn(springPlatform.prDownloaderPath, args, {
+			env: {
+			...process.env,
+			...envOverrides,
+			}
+		});
 		this.emit('started', name);
 
 		prd.stdout.on('data', (data) => {
@@ -84,13 +89,25 @@ class PrdDownloader extends EventEmitter {
 		this.downloadPackage(engineName, ['--filesystem-writepath', springPlatform.writePath, '--download-engine', engineName]);
 	}
 
-	downloadGames(gameNames) {
+	downloadGames(gameNames, rapidRepo) {
 		const args = ['--filesystem-writepath', springPlatform.writePath];
+
 		for (const game of gameNames) {
 			args.push(...['--download-game', game]);
 		}
 
-		this.downloadPackage(gameNames.join(', '), args);
+		const envOverrides = {};
+
+		if (rapidRepo) {
+			envOverrides.PRD_RAPID_REPO_MASTER = rapidRepo;
+			log.info(`PRD_RAPID_REPO_MASTER = ${rapidRepo}`);
+		}
+
+		this.downloadPackage(
+			gameNames.join(', '),
+			args,
+			envOverrides
+		);
 	}
 
 	downloadMap(mapName) {

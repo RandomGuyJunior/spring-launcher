@@ -51,9 +51,9 @@ class SpringDownloader extends EventEmitter {
 		prdDownloader.downloadEngine(engineName);
 	}
 
-	downloadGames(gameNames) {
+	downloadGames(gameNames, rapidRepo) {
 		this.setDownloader(prdDownloader);
-		prdDownloader.downloadGames(gameNames);
+		prdDownloader.downloadGames(gameNames, rapidRepo);
 	}
 
 	downloadMap(mapName) {

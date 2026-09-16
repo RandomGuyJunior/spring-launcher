@@ -9,6 +9,20 @@ const { wizard } = require('../launcher_wizard');
 let downloadQueue = [];
 let isDownloading = false;
 
+const OFFICIAL_RAPID =
+	'https://repos-cdn.beyondallreason.dev/repos.gz';
+
+const CUSTOM_RAPID =
+	'https://randomguyrapid.duckdns.org/repos.gz';
+
+function GetRapidRepo(serverAddress) {
+	if (serverAddress === 'moddedbar.duckdns.org') {
+		return CUSTOM_RAPID;
+	}
+
+	return OFFICIAL_RAPID;
+}
+
 bridge.on('Download', (command) => {
 	for (const dl of downloadQueue) {
 		if (dl.name === command.name) {
@@ -35,7 +49,13 @@ function DownloadFront() {
 
 	isDownloading = true;
 	if (type === 'game') {
-		springDownloader.downloadGames([name]);
+		const rapidRepo = GetRapidRepo(dl.serverAddress);
+
+		log.info(`Game download requested for: ${name}`);
+		log.info(`Connected TEI server: ${dl.serverAddress}`);
+		log.info(`Using Rapid repository: ${rapidRepo}`);
+
+		springDownloader.downloadGames([name], rapidRepo);
 	} else if (type === 'map') {
 		springDownloader.downloadMap(name);
 	} else if (type === 'engine') {
