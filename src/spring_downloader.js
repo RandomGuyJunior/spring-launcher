@@ -5,12 +5,14 @@ const EventEmitter = require('events');
 const { log } = require('./spring_log');
 const prdDownloader = require('./prd_downloader');
 const httpDownloader = require('./http_downloader');
+const CUSTOM_MAP_SEARCH = 'https://moddedbar.duckdns.org/find';
 
 class SpringDownloader extends EventEmitter {
 	constructor() {
 		super();
 
 		this.currentDownloader = null;
+		this.mapFallback = null;
 
 		let downloaders = [prdDownloader, httpDownloader];
 		for (const downloader of downloaders) {
@@ -23,16 +25,40 @@ class SpringDownloader extends EventEmitter {
 			});
 
 			downloader.on('finished', (downloadItem) => {
+				this.mapFallback = null;
 				this.setDownloader(null);
 				this.emit('finished', downloadItem);
 			});
 
 			downloader.on('failed', (downloadItem, msg) => {
+			if (
+					downloader === prdDownloader &&
+					this.mapFallback &&
+					this.mapFallback.name === downloadItem &&
+					!this.mapFallback.attempted
+			) {
+				this.mapFallback.attempted = true;
+
+				log.info(
+						`Official map download failed for "${downloadItem}", trying custom map service`
+				);
+
+				prdDownloader.downloadMap(
+					downloadItem,
+					CUSTOM_MAP_SEARCH,
+					false
+				);
+
+				return;
+			}
+
+				this.mapFallback = null;
 				this.setDownloader(null);
 				this.emit('failed', downloadItem, msg);
 			});
 
 			downloader.on('aborted', (downloadItem, msg) => {
+				this.mapFallback = null;
 				this.setDownloader(null);
 				this.emit('aborted', downloadItem, msg);
 			});
@@ -56,9 +82,22 @@ class SpringDownloader extends EventEmitter {
 		prdDownloader.downloadGames(gameNames, rapidRepo);
 	}
 
-	downloadMap(mapName) {
-		this.setDownloader(prdDownloader);
-		prdDownloader.downloadMap(mapName);
+	downloadMap(mapName, serverAddress) {
+        this.setDownloader(prdDownloader);
+
+        if (
+                serverAddress &&
+                serverAddress.startsWith('moddedbar.duckdns.org')
+        ) {
+                this.mapFallback = {
+                        name: mapName,
+                        attempted: false,
+                };
+        } else {
+                this.mapFallback = null;
+        }
+
+        prdDownloader.downloadMap(mapName);
 	}
 
 	downloadResource(resource) {

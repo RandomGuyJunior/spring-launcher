@@ -14,7 +14,7 @@ class PrdDownloader extends EventEmitter {
 		this.progressPattern = new RegExp('[0-9]+/[0-9]+');
 	}
 
-	downloadPackage(name, args, envOverrides = {}) {
+	downloadPackage(name, args, envOverrides = {}, emitStarted = true) {
 		let finished = false;
 
 		if (!fs.existsSync(springPlatform.prDownloaderPath)) {
@@ -38,7 +38,9 @@ class PrdDownloader extends EventEmitter {
 			...envOverrides,
 			}
 		});
-		this.emit('started', name);
+		if (emitStarted) {
+			this.emit('started', name);
+		}
 
 		prd.stdout.on('data', (data) => {
 			const line = data.toString();
@@ -110,8 +112,20 @@ class PrdDownloader extends EventEmitter {
 		);
 	}
 
-	downloadMap(mapName) {
-		this.downloadPackage(mapName, ['--filesystem-writepath', springPlatform.writePath, '--download-map', mapName]);
+	downloadMap(mapName, httpSearchUrl = null, emitStarted = true) {
+        const envOverrides = {};
+
+        if (httpSearchUrl) {
+                envOverrides.PRD_HTTP_SEARCH_URL = httpSearchUrl;
+                log.info(`PRD_HTTP_SEARCH_URL = ${httpSearchUrl}`);
+        }
+
+        this.downloadPackage(
+                mapName,
+                ['--filesystem-writepath', springPlatform.writePath, '--download-map', mapName],
+                envOverrides,
+                emitStarted
+        );
 	}
 
 	downloadResource(resource) {

@@ -16,7 +16,10 @@ const CUSTOM_RAPID =
 	'https://randomguyrapid.duckdns.org/repos.gz';
 
 function GetRapidRepo(serverAddress) {
-	if (serverAddress === 'moddedbar.duckdns.org') {
+	if (
+    serverAddress &&
+    serverAddress.startsWith('moddedbar.duckdns.org')
+	) {
 		return CUSTOM_RAPID;
 	}
 
@@ -57,7 +60,7 @@ function DownloadFront() {
 
 		springDownloader.downloadGames([name], rapidRepo);
 	} else if (type === 'map') {
-		springDownloader.downloadMap(name);
+        springDownloader.downloadMap(name, dl.serverAddress);
 	} else if (type === 'engine') {
 		springDownloader.downloadEngine(name);
 	} else if (type === 'resource') {
