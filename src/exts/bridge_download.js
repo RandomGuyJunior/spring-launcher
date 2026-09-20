@@ -1,6 +1,7 @@
 'use strict';
 
 const log = require('electron-log');
+const https = require('https');
 
 const { bridge } = require('../spring_api');
 const springDownloader = require('../spring_downloader');
@@ -25,6 +26,85 @@ function GetRapidRepo(serverAddress) {
 
 	return OFFICIAL_RAPID;
 }
+
+const CUSTOM_MAP_CATALOG =
+    'https://moddedbar.duckdns.org/maps.json';
+
+function FetchJson(url) {
+    return new Promise((resolve, reject) => {
+        https.get(url, response => {
+            let data = '';
+
+            if (response.statusCode !== 200) {
+                response.resume();
+                reject(
+                    new Error(
+                        `HTTP ${response.statusCode} while fetching ${url}`
+                    )
+                );
+                return;
+            }
+
+            response.setEncoding('utf8');
+
+            response.on('data', chunk => {
+                data += chunk;
+            });
+
+            response.on('end', () => {
+                try {
+                    resolve(JSON.parse(data));
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        }).on('error', reject);
+    });
+}
+
+bridge.on('GetModdedMaps', async command => {
+    const serverAddress = command && command.serverAddress;
+
+    if (
+        !serverAddress ||
+        !serverAddress.startsWith('moddedbar.duckdns.org')
+    ) {
+        log.info(
+            `Ignoring GetModdedMaps for server: ${serverAddress}`
+        );
+
+        bridge.send('ModdedMaps', {
+            maps: []
+        });
+
+        return;
+    }
+
+    try {
+        log.info(
+            `Fetching Modded BAR map catalogue: ${CUSTOM_MAP_CATALOG}`
+        );
+
+        const maps = await FetchJson(CUSTOM_MAP_CATALOG);
+
+        log.info(
+            `Received ${maps.length} Modded BAR map(s)`
+        );
+
+        bridge.send('ModdedMaps', {
+            maps: maps
+        });
+    } catch (err) {
+        log.error(
+            `Failed to fetch Modded BAR map catalogue: ${err}`
+        );
+
+        bridge.send('ModdedMaps', {
+            maps: [],
+            error: String(err)
+        });
+    }
+});
 
 bridge.on('Download', (command) => {
 	for (const dl of downloadQueue) {
