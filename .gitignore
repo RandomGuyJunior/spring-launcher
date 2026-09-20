@@ -15,6 +15,7 @@ data/packages/
 data/rapid/
 data/games/
 data/plugins/
+data/sl-connection.json
 
 # spring-launcher temporary files
 Settings
