@@ -38,6 +38,7 @@ app.prependListener('ready', () => {
 		y: 100,
 		...winDimensions,
 		show: false,
+		title: 'Beyond All Reason (Modded)',
 		icon: `${__dirname}/renderer/spring-icon.png`,
 		webPreferences: {
 			nodeIntegration: true,
@@ -49,6 +50,10 @@ app.prependListener('ready', () => {
 	windowOpts.resizable = true; // enable resizing here, because this is what gets passed to spring.exe, and we want that to be resizeable
 	Menu.setApplicationMenu(null);
 	mainWindow = new BrowserWindow(windowOpts);
+	mainWindow.on('page-title-updated', (event) => {
+		event.preventDefault();
+		mainWindow.setTitle('Beyond All Reason (Modded)');
+	});
 
 	require('@electron/remote/main').enable(mainWindow.webContents);
 

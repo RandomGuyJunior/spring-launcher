@@ -24,10 +24,7 @@ function updateLinks(links) {
 }
 
 function setMainTitle(title) {
-	if (isDev) {
-		title = `${title} (DEV)`;
-	}
-	lblMainTitle.innerText = title;
+	lblMainTitle.innerText = `${title} (Modded)`;
 }
 
 module.exports = {
