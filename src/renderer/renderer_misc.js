@@ -24,7 +24,7 @@ function updateLinks(links) {
 }
 
 function setMainTitle(title) {
-	lblMainTitle.innerText = `${title} (Modded)`;
+	lblMainTitle.innerText = `Spring Launcher (Dev)`;
 }
 
 module.exports = {
