@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - master
+    tags:
+      - "v*"
     paths:
       - "src/**"
       - "data/**"
@@ -14,9 +16,6 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/build-windows.yml"
-  push:
-    tags:
-      - "v*"
 
 permissions:
   contents: write
