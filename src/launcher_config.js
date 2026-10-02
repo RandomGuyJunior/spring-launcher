@@ -50,6 +50,10 @@ const defaultSetup = {
 
 	'downloads': {
 		'games': [],
+		// Additional game groups that must be resolved against a specific
+		// Rapid repository. The normal "games" list continues to use the
+		// setup's regular PRD_RAPID_REPO_MASTER.
+		'game_groups': [],
 		'maps': [],
 		'engines': [],
 		'resources': [],
@@ -175,14 +179,29 @@ function applyModdedConfig(conf) {
 				};
 			}
 
-			if (override.downloads && override.downloads.games_add) {
+			if (override.downloads) {
 				setup.downloads = setup.downloads || {};
-				setup.downloads.games = [
-					...new Set([
-						...(setup.downloads.games || []),
-						...override.downloads.games_add,
-					]),
-				];
+
+				// Backwards-compatible support for older overlays.
+				if (override.downloads.games_add) {
+					setup.downloads.games = [
+						...new Set([
+							...(setup.downloads.games || []),
+							...override.downloads.games_add,
+						]),
+					];
+				}
+
+				// Packages in a game_group are downloaded in a separate
+				// pr-downloader process with an explicit Rapid repository.
+				// This prevents a custom repo from replacing the authoritative
+				// BAR repo for byar:test / byar-chobby:test.
+				if (override.downloads.game_groups) {
+					setup.downloads.game_groups = [
+						...(setup.downloads.game_groups || []),
+						...override.downloads.game_groups,
+					];
+				}
 			}
 
 			if (override.launch) {
