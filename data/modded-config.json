@@ -1,12 +1,14 @@
 {
   "profiles": {
     "manual-win": {
-      "env_variables": {
-        "PRD_RAPID_REPO_MASTER": "https://randomguyrapid.duckdns.org/repos.gz"
-      },
       "downloads": {
-        "games_add": [
-          "modded-chobby:test"
+        "game_groups": [
+          {
+            "games": [
+              "modded-chobby:test"
+            ],
+            "rapid_repo": "https://randomguyrapid.duckdns.org/repos.gz"
+          }
         ]
       },
       "launch": {
@@ -15,7 +17,7 @@
           "rapid://modded-chobby:test"
         ],
         "springsettings": {
-          "RapidTagResolutionOrder": "randomguyrapid.duckdns.org;repos-cdn.beyondallreason.dev;repos.beyondallreason.dev"
+          "RapidTagResolutionOrder": "repos-cdn.beyondallreason.dev;repos.beyondallreason.dev;randomguyrapid.duckdns.org"
         }
       }
     }
