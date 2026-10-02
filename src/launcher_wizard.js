@@ -125,6 +125,22 @@ class Wizard extends EventEmitter {
 				});
 			}
 
+			// Custom packages can be bound to an explicit Rapid repository
+			// without changing PRD_RAPID_REPO_MASTER for official BAR content.
+			for (const group of (config.downloads.game_groups || [])) {
+				if (!group || !Array.isArray(group.games) || group.games.length === 0) {
+					continue;
+				}
+				steps.push({
+					name: 'games',
+					item: group.games.join(', '),
+					action: () => {
+						this.isActive = true;
+						springDownloader.downloadGames(group.games, group.rapid_repo);
+					}
+				});
+			}
+
 			config.downloads.maps.forEach((map) => {
 				steps.push({
 					name: 'map',
