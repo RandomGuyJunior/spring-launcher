@@ -17,7 +17,7 @@
           "rapid://modded-chobby:test"
         ],
         "springsettings": {
-          "RapidTagResolutionOrder": "repos-cdn.beyondallreason.dev;repos.beyondallreason.dev;randomguyrapid.duckdns.org"
+          "RapidTagResolutionOrder": "randomguyrapid.duckdns.org;repos-cdn.beyondallreason.dev;repos.beyondallreason.dev"
         }
       }
     }
