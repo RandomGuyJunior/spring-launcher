@@ -129,72 +129,86 @@ function mergeDeep(target, ...sources) {
 	return mergeDeep(target, ...sources);
 }
 
+function loadJsonFile(filePath) {
+	return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+}
+
+function getBundledDataPath(fileName) {
+	// In development __dirname is <repo>/src; when packaged it is inside
+	// app.asar/src. Electron's fs support can read app.asar transparently.
+	return path.join(__dirname, '..', 'data', fileName);
+}
+
 function applyModdedConfig(conf) {
-        try {
-                const writePath = resolveWritePath(conf.title);
-                const moddedConfigFile = path.join(writePath, 'modded-config.json');
+	try {
+		const writePath = resolveWritePath(conf.title);
+		const localModdedConfigFile = path.join(writePath, 'modded-config.json');
+		const bundledModdedConfigFile = getBundledDataPath('modded-config.json');
 
-                if (!fs.existsSync(moddedConfigFile)) {
-                        return conf;
-                }
+		let moddedConfigFile = null;
+		if (fs.existsSync(localModdedConfigFile)) {
+			moddedConfigFile = localModdedConfigFile;
+		} else if (fs.existsSync(bundledModdedConfigFile)) {
+			moddedConfigFile = bundledModdedConfigFile;
+		}
 
-                console.log(`Loading Modded Config file: ${moddedConfigFile}`);
+		if (!moddedConfigFile) {
+			return conf;
+		}
 
-                const moddedConfig = JSON.parse(
-                        fs.readFileSync(moddedConfigFile)
-                );
+		console.log(`Loading Modded Config file: ${moddedConfigFile}`);
+		const moddedConfig = loadJsonFile(moddedConfigFile);
 
-                for (const setup of conf.setups) {
-                        const setupId = setup.package && setup.package.id;
-                        const override = moddedConfig.profiles &&
-                                moddedConfig.profiles[setupId];
+		for (const setup of conf.setups) {
+			const setupId = setup.package && setup.package.id;
+			const override = moddedConfig.profiles &&
+				moddedConfig.profiles[setupId];
 
-                        if (!override) {
-                                continue;
-                        }
+			if (!override) {
+				continue;
+			}
 
-                        if (override.env_variables) {
-                                setup.env_variables = {
-                                        ...(setup.env_variables || {}),
-                                        ...override.env_variables,
-                                };
-                        }
+			if (override.env_variables) {
+				setup.env_variables = {
+					...(setup.env_variables || {}),
+					...override.env_variables,
+				};
+			}
 
-                        if (override.downloads && override.downloads.games_add) {
-                                setup.downloads = setup.downloads || {};
-                                setup.downloads.games = [
-                                        ...new Set([
-                                                ...(setup.downloads.games || []),
-                                                ...override.downloads.games_add,
-                                        ]),
-                                ];
-                        }
+			if (override.downloads && override.downloads.games_add) {
+				setup.downloads = setup.downloads || {};
+				setup.downloads.games = [
+					...new Set([
+						...(setup.downloads.games || []),
+						...override.downloads.games_add,
+					]),
+				];
+			}
 
-                        if (override.launch) {
-                                setup.launch = setup.launch || {};
+			if (override.launch) {
+				setup.launch = setup.launch || {};
 
-                                if (override.launch.start_args) {
-                                        setup.launch.start_args =
-                                                override.launch.start_args;
-                                }
+				if (override.launch.start_args) {
+					setup.launch.start_args = override.launch.start_args;
+				}
 
-                                if (override.launch.springsettings) {
-                                        setup.launch.springsettings = {
-                                                ...(setup.launch.springsettings || {}),
-                                                ...override.launch.springsettings,
-                                        };
-                                }
-                        }
+				if (override.launch.springsettings) {
+					setup.launch.springsettings = {
+						...(setup.launch.springsettings || {}),
+						...override.launch.springsettings,
+					};
+				}
+			}
 
-                        console.log(`Applied Modded Config to profile: ${setupId}`);
-                }
+			console.log(`Applied Modded Config to profile: ${setupId}`);
+		}
 
-                return conf;
-        } catch (err) {
-                console.error('Cannot load modded-config.json. Using normal BAR config.');
-                console.error(err);
-                return conf;
-        }
+		return conf;
+	} catch (err) {
+		console.error('Cannot load modded-config.json. Using normal BAR config.');
+		console.error(err);
+		return conf;
+	}
 }
 
 function loadConfig() {
@@ -203,8 +217,14 @@ function loadConfig() {
 		return require(argv.config);
 	}
 
-	// 2. Load config file that comes with the application
-	const conf = require('./config.json');
+	// 2. Load the checked-in config that ships with the application.
+	// Do not require a manually-created src/config.json: that file is ignored
+	// by git and made fresh checkouts / packaged builds fail before showing UI.
+	const bundledConfigFile = getBundledDataPath('config.json');
+	if (!fs.existsSync(bundledConfigFile)) {
+		throw new Error(`Bundled launcher config is missing: ${bundledConfigFile}`);
+	}
+	const conf = loadJsonFile(bundledConfigFile);
 
 	// 3. If there's a config.json file use that instead
 	//    but if that fails to parse just ignore it and use the application one
