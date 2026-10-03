@@ -2,8 +2,6 @@
 
 ## Download for Windows
 
-**New user? You do not need Node.js, npm, Git, or the VBS file.**
-
 ### [⬇️ Download the latest Windows installer](https://github.com/RandomGuyJunior/spring-launcher/releases/latest)
 
 Open the latest release, download the Windows `.exe`, run the installer, and start the launcher normally.
@@ -33,7 +31,7 @@ The `linux-test` prerelease is a rolling build from `master`: each successful Li
 
 ## About
 
-This is the RandomGuy modded Spring/Beyond All Reason launcher. It keeps the normal Spring launcher foundation while adding support for the RandomGuy modded BAR environment, including the custom Rapid source and custom-map handling.
+This is the RandomGuy modded Spring/Beyond All Reason launcher. It keeps the normal Spring launcher foundation while adding support for the RandomGuy BAR development environment, including the custom Rapid source and custom-map handling.
 
 Launcher for SpringRTS games
 
