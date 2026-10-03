@@ -14,6 +14,23 @@ The installer is intended to work on a fresh Windows PC and will bootstrap the B
 
 ---
 
+## Linux test build
+
+Linux support is currently in testing.
+
+### [⬇️ Download the current Linux AppImage test build](https://github.com/RandomGuyJunior/spring-launcher/releases/tag/linux-test)
+
+Download the `.AppImage`, make it executable, and run it:
+
+```bash
+chmod +x spring-launcher-*.AppImage
+./spring-launcher-*.AppImage
+```
+
+The `linux-test` prerelease is a rolling build from `master`: each successful Linux build replaces the previous test AppImage, so this link stays the same.
+
+---
+
 ## About
 
 This is the RandomGuy modded Spring/Beyond All Reason launcher. It keeps the normal Spring launcher foundation while adding support for the RandomGuy modded BAR environment, including the custom Rapid source and custom-map handling.
