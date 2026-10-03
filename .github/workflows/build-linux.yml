@@ -52,7 +52,7 @@ jobs:
           path: |
             dist/*.AppImage
             dist/latest-linux.yml
-            dist/*.blockmap
+           
           if-no-files-found: error
 
       - name: Publish rolling Linux test release
@@ -64,14 +64,14 @@ jobs:
           git tag -f linux-test
           git push origin -f linux-test
           if gh release view linux-test >/dev/null 2>&1; then
-            gh release upload linux-test dist/*.AppImage dist/latest-linux.yml dist/*.blockmap --clobber
+            gh release upload linux-test dist/*.AppImage dist/latest-linux.yml --clobber
             gh release edit linux-test \
               --title "Linux Test Build" \
               --notes "Rolling Linux AppImage test build from master. This release is for testing and may be replaced by newer builds." \
               --prerelease
           else
             gh release create linux-test \
-              dist/*.AppImage dist/latest-linux.yml dist/*.blockmap \
+              dist/*.AppImage dist/latest-linux.yml \
               --title "Linux Test Build" \
               --notes "Rolling Linux AppImage test build from master. This release is for testing and may be replaced by newer builds." \
               --prerelease
@@ -84,4 +84,4 @@ jobs:
           files: |
             dist/*.AppImage
             dist/latest-linux.yml
-            dist/*.blockmap
+           
