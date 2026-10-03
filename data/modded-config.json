@@ -20,6 +20,27 @@
           "RapidTagResolutionOrder": "randomguyrapid.duckdns.org;repos-cdn.beyondallreason.dev;repos.beyondallreason.dev"
         }
       }
+    },
+    "manual-linux": {
+      "downloads": {
+        "game_groups": [
+          {
+            "games": [
+              "modded-chobby:test"
+            ],
+            "rapid_repo": "https://randomguyrapid.duckdns.org/repos.gz"
+          }
+        ]
+      },
+      "launch": {
+        "start_args": [
+          "--menu",
+          "rapid://modded-chobby:test"
+        ],
+        "springsettings": {
+          "RapidTagResolutionOrder": "randomguyrapid.duckdns.org;repos-cdn.beyondallreason.dev;repos.beyondallreason.dev"
+        }
+      }
     }
   }
 }
