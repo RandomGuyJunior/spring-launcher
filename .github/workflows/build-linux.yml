@@ -55,6 +55,28 @@ jobs:
             dist/*.blockmap
           if-no-files-found: error
 
+      - name: Publish rolling Linux test release
+        if: github.ref == 'refs/heads/master'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git tag -f linux-test
+          git push origin -f linux-test
+          if gh release view linux-test >/dev/null 2>&1; then
+            gh release upload linux-test dist/*.AppImage dist/latest-linux.yml dist/*.blockmap --clobber
+            gh release edit linux-test \
+              --title "Linux Test Build" \
+              --notes "Rolling Linux AppImage test build from master. This release is for testing and may be replaced by newer builds." \
+              --prerelease
+          else
+            gh release create linux-test \
+              dist/*.AppImage dist/latest-linux.yml dist/*.blockmap \
+              --title "Linux Test Build" \
+              --notes "Rolling Linux AppImage test build from master. This release is for testing and may be replaced by newer builds." \
+              --prerelease
+          fi
+
       - name: Publish tagged release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
