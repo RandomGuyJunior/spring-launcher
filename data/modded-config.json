@@ -5,7 +5,8 @@
         "game_groups": [
           {
             "games": [
-              "modded-chobby:test"
+              "modded-chobby:test",
+              "randomguy-hosting:test"
             ],
             "rapid_repo": "https://randomguyrapid.duckdns.org/repos.gz"
           }
@@ -26,7 +27,8 @@
         "game_groups": [
           {
             "games": [
-              "modded-chobby:test"
+              "modded-chobby:test",
+              "randomguy-hosting:test"
             ],
             "rapid_repo": "https://randomguyrapid.duckdns.org/repos.gz"
           }
