@@ -132,7 +132,9 @@ function DownloadFront() {
 
 	isDownloading = true;
 	if (type === 'game') {
-		const rapidRepo = GetRapidRepo(dl.serverAddress);
+		const requestedRapidRepo =
+			dl.resource && dl.resource.rapidRepo;
+		const rapidRepo = requestedRapidRepo || GetRapidRepo(dl.serverAddress);
 
 		log.info(`Game download requested for: ${name}`);
 		log.info(`Connected TEI server: ${dl.serverAddress}`);
