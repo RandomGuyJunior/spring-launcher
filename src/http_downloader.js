@@ -45,7 +45,7 @@ class HttpDownloader extends EventEmitter {
 		const url = new URL(resource['url']);
 		const name = resource['destination'];
 		const destination = path.join(springPlatform.writePath, name);
-		if (fs.existsSync(destination)) {
+		if (fs.existsSync(destination) && !resource['overwrite']) {
 			this.emit('finished', name);
 			log.info(`Skipping ${destination}: already exists.`);
 			return;
