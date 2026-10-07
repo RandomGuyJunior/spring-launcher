@@ -214,10 +214,29 @@ function ProcessAfterDone(name, isSuccess, isAborted) {
 	}
 
 	isDownloading = false;
-	RemoveElement(name);
+
+	// Resource downloaders report their destination path, while Chobby tracks
+	// the logical QueueDownload name. Resolve the active resource back to its
+	// queue item so DownloadFinished uses the same name Chobby queued.
+	let completed = RemoveElement(name);
+	if (completed == null) {
+		for (let i = 0; i < downloadQueue.length; i++) {
+			const item = downloadQueue[i];
+			if (
+				item.isDownloading &&
+				item.type === 'resource' &&
+				item.resource &&
+				item.resource.destination === name
+			) {
+				completed = downloadQueue.splice(i, 1)[0];
+				break;
+			}
+		}
+	}
+	const completedName = completed ? completed.name : name;
 
 	bridge.send('DownloadFinished', {
-		name: name,
+		name: completedName,
 		isSuccess: isSuccess,
 		isAborted: isAborted
 	});
