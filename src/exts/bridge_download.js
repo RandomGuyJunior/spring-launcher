@@ -132,15 +132,19 @@ function DownloadFront() {
 
 	isDownloading = true;
 	if (type === 'game') {
-		const requestedRapidRepo =
-			dl.resource && dl.resource.rapidRepo;
-		const rapidRepo = requestedRapidRepo || GetRapidRepo(dl.serverAddress);
-
-		log.info(`Game download requested for: ${name}`);
-		log.info(`Connected TEI server: ${dl.serverAddress}`);
-		log.info(`Using Rapid repository: ${rapidRepo}`);
-
-		springDownloader.downloadGames([name], rapidRepo);
+		if (name.startsWith('dev-mods:')) {
+			// All development mods use our trusted Rapid repository. Ignore
+			// arbitrary repository URLs supplied by UI/catalog entries.
+			log.info(`Mod Hub Rapid download requested for: ${name}`);
+			springDownloader.downloadRapidMod(name, CUSTOM_RAPID);
+		} else {
+			const requestedRapidRepo = dl.resource && dl.resource.rapidRepo;
+			const rapidRepo = requestedRapidRepo || GetRapidRepo(dl.serverAddress);
+			log.info(`Game download requested for: ${name}`);
+			log.info(`Connected TEI server: ${dl.serverAddress}`);
+			log.info(`Using Rapid repository: ${rapidRepo}`);
+			springDownloader.downloadGames([name], rapidRepo);
+		}
 	} else if (type === 'map') {
         springDownloader.downloadMap(name, dl.serverAddress);
 	} else if (type === 'engine') {
