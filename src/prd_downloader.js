@@ -112,6 +112,19 @@ class PrdDownloader extends EventEmitter {
 		);
 	}
 
+	// Mod Hub packages must resolve through Rapid only, never HTTP game search.
+	downloadRapidMod(tag, rapidRepo) {
+		if (!/^dev-mods:[a-zA-Z0-9_-]+$/.test(tag)) {
+			throw new Error('Invalid development mod Rapid tag: ' + tag);
+		}
+		const envOverrides = { PRD_RAPID_REPO_MASTER: rapidRepo };
+		log.info('Rapid-only mod download: ' + tag + ' via ' + rapidRepo);
+		this.downloadPackage(tag, [
+			'--filesystem-writepath', springPlatform.writePath,
+			'--rapid-download', tag
+		], envOverrides);
+	}
+
 	downloadMap(mapName, httpSearchUrl = null, emitStarted = true) {
         const envOverrides = {};
 
