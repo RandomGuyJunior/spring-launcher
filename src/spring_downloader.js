@@ -82,6 +82,11 @@ class SpringDownloader extends EventEmitter {
 		prdDownloader.downloadGames(gameNames, rapidRepo);
 	}
 
+	downloadRapidMod(tag, rapidRepo) {
+		this.setDownloader(prdDownloader);
+		prdDownloader.downloadRapidMod(tag, rapidRepo);
+	}
+
 	downloadMap(mapName, serverAddress) {
         this.setDownloader(prdDownloader);
 
