@@ -146,42 +146,49 @@ bridge.on('UninstallMod', async command => {
 			// Resolve the exact tag from the trusted repo index, not a directory
 			// search or a filename guessed from the mod ID.
 			const repoHost = new URL(CUSTOM_RAPID).hostname;
-			const indexPath = path.join(springPlatform.writePath, 'rapid', repoHost, 'versions.gz');
-			let indexBytes;
-			try {
-				indexBytes = await fs.promises.readFile(indexPath);
-			} catch (err) {
-				if (err.code !== 'ENOENT') throw err;
-				// pr-downloader may cache repos.gz without caching versions.gz.
-				// Fetch precisely the trusted repo index without scanning packages.
-				indexBytes = await new Promise((resolve, reject) => {
-					const request = https.get(new URL('/versions.gz', CUSTOM_RAPID), response => {
-						if (response.statusCode !== 200) {
-							response.resume();
-							reject(new Error('Rapid version index unavailable (HTTP ' + response.statusCode + ').'));
-							return;
-						}
-						const chunks = [];
-						response.on('data', chunk => chunks.push(chunk));
-						response.on('end', () => resolve(Buffer.concat(chunks)));
-						response.on('error', reject);
-					});
-					request.setTimeout(10000, () => request.destroy(new Error('Rapid version index request timed out.')));
-					request.on('error', reject);
-				});
+			const repoCache = path.join(springPlatform.writePath, 'rapid', repoHost);
+			// Rapid's repos.gz is a directory of repositories. Each entry
+			// provides a short name and a URL to that repository's versions.gz.
+			// There is no universal /versions.gz at the master URL.
+			const repos = zlib.gunzipSync(await fs.promises.readFile(
+				path.join(repoCache, 'repos.gz'))).toString('utf8');
+			const repoRows = repos.split(/\\r?\\n/).map(line => line.trim().split(/\\s*,\\s*/));
+			const repoRow = repoRows.find(parts => parts[0] === 'dev-mods');
+			if (!repoRow || !repoRow[1]) {
+				throw new Error('dev-mods repository is missing from cached Rapid repos.gz.');
 			}
-			const index = zlib.gunzipSync(indexBytes).toString('utf8');
-			const entries = index.split(/\r?\n/).map(line => line.split(','));
+			const versionsUrl = new URL('versions.gz', repoRow[1].endsWith('/') ? repoRow[1] : repoRow[1] + '/');
+			if (versionsUrl.protocol !== 'https:' || versionsUrl.hostname !== repoHost) {
+				throw new Error('Refusing an untrusted Rapid repository index URL.');
+			}
+			const indexBytes = await new Promise((resolve, reject) => {
+				const request = https.get(versionsUrl, response => {
+					if (response.statusCode !== 200) {
+						response.resume();
+						reject(new Error('Rapid version index unavailable (HTTP ' + response.statusCode + ').'));
+						return;
+					}
+					const chunks = [];
+					response.on('data', chunk => chunks.push(chunk));
+					response.on('end', () => resolve(Buffer.concat(chunks)));
+					response.on('error', reject);
+				});
+				request.setTimeout(10000, () => request.destroy(new Error('Rapid version index request timed out.')));
+				request.on('error', reject);
+			});
+			const entries = zlib.gunzipSync(indexBytes).toString('utf8')
+				.split(/\\r?\\n/).map(line => line.trim().split(/\\s*,\\s*/));
+			// Rapid versions rows are: package hash, tag, display name.
 			const matches = entries.filter(parts =>
-				parts[0] === tag && /^[0-9a-fA-F]{32}$/.test(parts[1] || ''));
+				parts[1] === tag && /^[0-9a-fA-F]{32}$/.test(parts[0] || ''));
 			if (matches.length !== 1) {
 				throw new Error('Cannot resolve exactly one Rapid package for ' + tag + '; nothing deleted.');
 			}
-			const hash = matches[0][1].toLowerCase();
-			const sharedTags = entries
-				.filter(parts => parts[0] !== tag && (parts[1] || '').toLowerCase() === hash);
+			const hash = matches[0][0].toLowerCase();
+			const sharedTags = entries.filter(parts =>
+				parts[1] !== tag && (parts[0] || '').toLowerCase() === hash);
 			if (sharedTags.length) {
-				throw new Error('Cannot uninstall: Rapid package is shared with ' + sharedTags[0][0] + '.');
+				throw new Error('Cannot uninstall: Rapid package is shared with ' + sharedTags[0][1] + '.');
 			}
 			const pkgPath = path.resolve(springPlatform.writePath, 'packages', hash + '.sdp');
 			const packagesDir = path.resolve(springPlatform.writePath, 'packages');
