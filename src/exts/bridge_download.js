@@ -152,7 +152,7 @@ bridge.on('UninstallMod', async command => {
 			// There is no universal /versions.gz at the master URL.
 			const repos = zlib.gunzipSync(await fs.promises.readFile(
 				path.join(repoCache, 'repos.gz'))).toString('utf8');
-			const repoRows = repos.split(/\\r?\\n/).map(line => line.trim().split(/\\s*,\\s*/));
+			const repoRows = repos.split(/\r?\n/).map(line => line.trim().split(/\s*,\s*/));
 			const repoRow = repoRows.find(parts => parts[0] === 'dev-mods');
 			if (!repoRow || !repoRow[1]) {
 				throw new Error('dev-mods repository is missing from cached Rapid repos.gz.');
@@ -177,7 +177,7 @@ bridge.on('UninstallMod', async command => {
 				request.on('error', reject);
 			});
 			const entries = zlib.gunzipSync(indexBytes).toString('utf8')
-				.split(/\\r?\\n/).map(line => line.trim().split(/\\s*,\\s*/));
+				.split(/\r?\n/).map(line => line.trim().split(/\s*,\s*/));
 			// Rapid versions rows are: tag, package hash, display name, version.
 			const matches = entries.filter(parts =>
 				parts[0] === tag && /^[0-9a-fA-F]{32}$/.test(parts[1] || ''));
