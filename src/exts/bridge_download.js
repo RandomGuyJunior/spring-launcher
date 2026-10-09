@@ -154,6 +154,11 @@ bridge.on('UninstallMod', async command => {
 				throw new Error('Cannot resolve exactly one Rapid package for ' + tag + '; nothing deleted.');
 			}
 			const hash = matches[0][1].toLowerCase();
+			const sharedTags = index.split(/\\r?\\n/).map(line => line.split(','))
+				.filter(parts => parts[0] !== tag && (parts[1] || '').toLowerCase() === hash);
+			if (sharedTags.length) {
+				throw new Error('Cannot uninstall: Rapid package is shared with ' + sharedTags[0][0] + '.');
+			}
 			const pkgPath = path.resolve(springPlatform.writePath, 'rapid', 'packages', hash + '.sdp');
 			const packagesDir = path.resolve(springPlatform.writePath, 'rapid', 'packages');
 			if (path.dirname(pkgPath) !== packagesDir) throw new Error('Unsafe Rapid package path.');
