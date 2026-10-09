@@ -145,22 +145,46 @@ bridge.on('UninstallMod', async command => {
 			// Rapid stores the package manifest under rapid/packages/<hash>.sdp.
 			// Resolve the exact tag from the trusted repo index, not a directory
 			// search or a filename guessed from the mod ID.
-			const indexPath = path.join(springPlatform.writePath, 'rapid',
-				new URL(CUSTOM_RAPID).hostname, 'versions.gz');
-			const index = zlib.gunzipSync(await fs.promises.readFile(indexPath)).toString('utf8');
-			const matches = index.split(/\\r?\\n/).map(line => line.split(','))
-				.filter(parts => parts[0] === tag && /^[0-9a-fA-F]{32}$/.test(parts[1] || ''));
+			const repoHost = new URL(CUSTOM_RAPID).hostname;
+			const indexPath = path.join(springPlatform.writePath, 'rapid', repoHost, 'versions.gz');
+			let indexBytes;
+			try {
+				indexBytes = await fs.promises.readFile(indexPath);
+			} catch (err) {
+				if (err.code !== 'ENOENT') throw err;
+				// pr-downloader may cache repos.gz without caching versions.gz.
+				// Fetch precisely the trusted repo index without scanning packages.
+				indexBytes = await new Promise((resolve, reject) => {
+					const request = https.get(new URL('/versions.gz', CUSTOM_RAPID), response => {
+						if (response.statusCode !== 200) {
+							response.resume();
+							reject(new Error('Rapid version index unavailable (HTTP ' + response.statusCode + ').'));
+							return;
+						}
+						const chunks = [];
+						response.on('data', chunk => chunks.push(chunk));
+						response.on('end', () => resolve(Buffer.concat(chunks)));
+						response.on('error', reject);
+					});
+					request.setTimeout(10000, () => request.destroy(new Error('Rapid version index request timed out.')));
+					request.on('error', reject);
+				});
+			}
+			const index = zlib.gunzipSync(indexBytes).toString('utf8');
+			const entries = index.split(/\r?\n/).map(line => line.split(','));
+			const matches = entries.filter(parts =>
+				parts[0] === tag && /^[0-9a-fA-F]{32}$/.test(parts[1] || ''));
 			if (matches.length !== 1) {
 				throw new Error('Cannot resolve exactly one Rapid package for ' + tag + '; nothing deleted.');
 			}
 			const hash = matches[0][1].toLowerCase();
-			const sharedTags = index.split(/\\r?\\n/).map(line => line.split(','))
+			const sharedTags = entries
 				.filter(parts => parts[0] !== tag && (parts[1] || '').toLowerCase() === hash);
 			if (sharedTags.length) {
 				throw new Error('Cannot uninstall: Rapid package is shared with ' + sharedTags[0][0] + '.');
 			}
-			const pkgPath = path.resolve(springPlatform.writePath, 'rapid', 'packages', hash + '.sdp');
-			const packagesDir = path.resolve(springPlatform.writePath, 'rapid', 'packages');
+			const pkgPath = path.resolve(springPlatform.writePath, 'packages', hash + '.sdp');
+			const packagesDir = path.resolve(springPlatform.writePath, 'packages');
 			if (path.dirname(pkgPath) !== packagesDir) throw new Error('Unsafe Rapid package path.');
 			const pkgStat = await fs.promises.lstat(pkgPath);
 			if (!pkgStat.isFile() || pkgStat.isSymbolicLink()) throw new Error('Unsafe Rapid package file.');
