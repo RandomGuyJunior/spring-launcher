@@ -7,11 +7,13 @@ const log = require('electron-log');
 
 const springPlatform = require('./spring_platform');
 const fs = require('fs');
+const path = require('path');
 
 class PrdDownloader extends EventEmitter {
 	constructor() {
 		super();
 		this.progressPattern = new RegExp('[0-9]+/[0-9]+');
+		this.devModRepoIndexRefreshed = false;
 	}
 
 	downloadPackage(name, args, envOverrides = {}, emitStarted = true) {
@@ -117,8 +119,26 @@ class PrdDownloader extends EventEmitter {
 		if (!/^dev-mods:[a-zA-Z0-9_-]+$/.test(tag)) {
 			throw new Error('Invalid development mod Rapid tag: ' + tag);
 		}
-		const envOverrides = { PRD_RAPID_REPO_MASTER: rapidRepo };
-		log.info('Rapid-only mod download: ' + tag + ' via ' + rapidRepo);
+		// pr-downloader caches repos.gz indefinitely. Refresh it once per launcher
+		// session so existing installations can discover newly added mod repos.
+		if (!this.devModRepoIndexRefreshed) {
+			const repoHost = new URL(rapidRepo).hostname;
+			const repoIndex = path.join(springPlatform.writePath, 'rapid', repoHost, 'repos.gz');
+			try {
+				if (fs.existsSync(repoIndex)) {
+					fs.unlinkSync(repoIndex);
+					log.info('Refreshing development mod Rapid repository index: ' + repoIndex);
+				}
+				this.devModRepoIndexRefreshed = true;
+			} catch (err) {
+				log.warn('Could not refresh development mod Rapid repository index: ' + err);
+			}
+		}
+		const envOverrides = {
+			PRD_RAPID_REPO_MASTER: rapidRepo,
+			PRD_RAPID_USE_STREAMER: 'false'
+		};
+		log.info('Development mod Rapid download (streamer disabled): ' + tag + ' via ' + rapidRepo);
 		this.downloadPackage(tag, [
 			'--filesystem-writepath', springPlatform.writePath,
 			'--rapid-download', tag
