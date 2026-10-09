@@ -178,17 +178,17 @@ bridge.on('UninstallMod', async command => {
 			});
 			const entries = zlib.gunzipSync(indexBytes).toString('utf8')
 				.split(/\\r?\\n/).map(line => line.trim().split(/\\s*,\\s*/));
-			// Rapid versions rows are: package hash, tag, display name.
+			// Rapid versions rows are: tag, package hash, display name, version.
 			const matches = entries.filter(parts =>
-				parts[1] === tag && /^[0-9a-fA-F]{32}$/.test(parts[0] || ''));
+				parts[0] === tag && /^[0-9a-fA-F]{32}$/.test(parts[1] || ''));
 			if (matches.length !== 1) {
 				throw new Error('Cannot resolve exactly one Rapid package for ' + tag + '; nothing deleted.');
 			}
-			const hash = matches[0][0].toLowerCase();
+			const hash = matches[0][1].toLowerCase();
 			const sharedTags = entries.filter(parts =>
-				parts[1] !== tag && (parts[0] || '').toLowerCase() === hash);
+				parts[0] !== tag && (parts[1] || '').toLowerCase() === hash);
 			if (sharedTags.length) {
-				throw new Error('Cannot uninstall: Rapid package is shared with ' + sharedTags[0][1] + '.');
+				throw new Error('Cannot uninstall: Rapid package is shared with ' + sharedTags[0][0] + '.');
 			}
 			const pkgPath = path.resolve(springPlatform.writePath, 'packages', hash + '.sdp');
 			const packagesDir = path.resolve(springPlatform.writePath, 'packages');
