@@ -185,8 +185,12 @@ bridge.on('UninstallMod', async command => {
 				throw new Error('Cannot resolve exactly one Rapid package for ' + tag + '; nothing deleted.');
 			}
 			const hash = matches[0][1].toLowerCase();
+			// dev-mods:git:<hash> is Rapid's immutable Git alias for the same
+			// package, not a separate installed mod. Keep guarding real tags.
 			const sharedTags = entries.filter(parts =>
-				parts[0] !== tag && (parts[1] || '').toLowerCase() === hash);
+				parts[0] !== tag &&
+				!/^dev-mods:git:[0-9a-fA-F]{40}$/.test(parts[0] || '') &&
+				(parts[1] || '').toLowerCase() === hash);
 			if (sharedTags.length) {
 				throw new Error('Cannot uninstall: Rapid package is shared with ' + sharedTags[0][0] + '.');
 			}
