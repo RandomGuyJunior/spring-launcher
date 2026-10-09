@@ -106,25 +106,69 @@ bridge.on('GetModdedMaps', async command => {
     }
 });
 
-// Uninstall protocol: always acknowledge requests. Physical Rapid removal must
-// only be enabled once package ownership and reverse dependencies can be
-// verified without touching BAR or RandomGuy Hosting's shared pool data.
-bridge.on('UninstallMod', command => {
+// Only Mod Hub-owned .sdd directories may be removed here. Rapid .sdp
+// packages share pool objects and require a separate reference-safe remover.
+const fs = require('fs');
+const path = require('path');
+const springPlatform = require('../spring_platform');
+const uninstallingMods = new Set();
+
+bridge.on('UninstallMod', async command => {
 	const id = command && command.id;
 	const tag = command && command.tag;
 	const requestId = command && command.requestId;
-	if (!id || !requestId || !/^dev-mods:[a-zA-Z0-9_-]+$/.test(tag || '')) {
-		bridge.send('UninstallModResult', {
-			id, requestId, success: false,
-			error: 'Invalid uninstall request; no files were removed.'
-		});
+	const respond = (success, error) => bridge.send('UninstallModResult', {
+		id, requestId, success, ...(error ? {error} : {})
+	});
+	if (typeof id !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(id) ||
+		tag !== 'dev-mods:' + id || typeof requestId !== 'string' || !requestId) {
+		respond(false, 'Invalid Mod Hub uninstall request.');
 		return;
 	}
-	log.warn('Refusing unsafe Rapid uninstall for ' + tag + ': safe shared-pool cleanup is not implemented.');
-	bridge.send('UninstallModResult', {
-		id, requestId, success: false,
-		error: 'Safe Rapid file deletion is not implemented yet. No files were removed; BAR and RandomGuy Hosting remain protected.'
-	});
+	if (uninstallingMods.has(id) || downloadQueue.some(item => item.name === tag)) {
+		respond(false, 'This mod is currently being downloaded or uninstalled.');
+		return;
+	}
+	uninstallingMods.add(id);
+	try {
+		const gamesDir = path.resolve(springPlatform.writePath, 'games');
+		const target = path.resolve(gamesDir, id + '.sdd');
+		if (path.dirname(target) !== gamesDir || !target.endsWith('.sdd')) {
+			throw new Error('Invalid mod directory.');
+		}
+		const stat = await fs.promises.lstat(target).catch(err => {
+			if (err.code === 'ENOENT') return null;
+			throw err;
+		});
+		if (!stat) {
+			throw new Error('No managed .sdd directory found. Rapid .sdp removal is not yet supported safely.');
+		}
+		if (!stat.isDirectory() || stat.isSymbolicLink()) {
+			throw new Error('Refusing to remove a non-directory or symbolic link.');
+		}
+		// Do not delete arbitrary local .sdd games: require the Mod Hub
+		// marker created by its own installation process.
+		const marker = path.join(target, '.randomguy-modhub-owned');
+		const markerStat = await fs.promises.lstat(marker).catch(err => {
+			if (err.code === 'ENOENT') return null;
+			throw err;
+		});
+		if (!markerStat || !markerStat.isFile() || markerStat.isSymbolicLink()) {
+			throw new Error('Directory is not marked as Mod Hub-owned; refusing deletion.');
+		}
+		const markerTag = (await fs.promises.readFile(marker, 'utf8')).trim();
+		if (markerTag !== tag) {
+			throw new Error('Mod ownership marker does not match the requested mod.');
+		}
+		await fs.promises.rm(target, {recursive: true, force: false});
+		log.info('Removed Mod Hub .sdd: ' + target);
+		respond(true);
+	} catch (err) {
+		log.warn('Mod uninstall rejected: ' + err);
+		respond(false, String(err.message || err));
+	} finally {
+		uninstallingMods.delete(id);
+	}
 });
 
 bridge.on('Download', (command) => {
