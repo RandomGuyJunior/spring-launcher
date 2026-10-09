@@ -16,6 +16,7 @@ data/rapid/
 data/games/
 data/plugins/
 data/sl-connection.json
+data/luaUI/Config/randomguy_mods_catalog.json
 
 # spring-launcher temporary files
 Settings

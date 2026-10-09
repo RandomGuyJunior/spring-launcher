@@ -1,3 +1,4 @@
 {
-  "config": "manual-win"
+  "config": "manual-win",
+  "checkForUpdates": true
 }
