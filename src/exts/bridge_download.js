@@ -2,6 +2,9 @@
 
 const log = require('electron-log');
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
+const springPlatform = require('../spring_platform');
 
 const { bridge } = require('../spring_api');
 const springDownloader = require('../spring_downloader');
@@ -132,6 +135,23 @@ function DownloadFront() {
 
 	isDownloading = true;
 	if (type === 'game') {
+		// Skirmish mod stacks are generated locally as .sdd games. They are
+		// not published Rapid packages and must never be sent to pr-downloader.
+		if (name.startsWith('RandomGuy Mod Stack ')) {
+			const key = name.slice('RandomGuy Mod Stack '.length);
+			if (/^[a-zA-Z0-9_-]+(?:__[a-zA-Z0-9_-]+)*$/.test(key)) {
+				const modinfoPath = path.join(springPlatform.writePath, 'games',
+					'randomguy_mod_stack_' + key + '.sdd', 'modinfo.lua');
+				if (fs.existsSync(modinfoPath)) {
+					log.info('Using installed local Skirmish mod stack: ' + name);
+					ProcessAfterDone(name, true, false);
+					return;
+				}
+			}
+			log.error('Local Skirmish mod stack not found: ' + name);
+			ProcessAfterDone(name, false, false);
+			return;
+		}
 		if (name.startsWith('dev-mods:')) {
 			// All development mods use our trusted Rapid repository. Ignore
 			// arbitrary repository URLs supplied by UI/catalog entries.
