@@ -106,6 +106,27 @@ bridge.on('GetModdedMaps', async command => {
     }
 });
 
+// Uninstall protocol: always acknowledge requests. Physical Rapid removal must
+// only be enabled once package ownership and reverse dependencies can be
+// verified without touching BAR or RandomGuy Hosting's shared pool data.
+bridge.on('UninstallMod', command => {
+	const id = command && command.id;
+	const tag = command && command.tag;
+	const requestId = command && command.requestId;
+	if (!id || !requestId || !/^dev-mods:[a-zA-Z0-9_-]+$/.test(tag || '')) {
+		bridge.send('UninstallModResult', {
+			id, requestId, success: false,
+			error: 'Invalid uninstall request; no files were removed.'
+		});
+		return;
+	}
+	log.warn('Refusing unsafe Rapid uninstall for ' + tag + ': safe shared-pool cleanup is not implemented.');
+	bridge.send('UninstallModResult', {
+		id, requestId, success: false,
+		error: 'Safe Rapid file deletion is not implemented yet. No files were removed; BAR and RandomGuy Hosting remain protected.'
+	});
+});
+
 bridge.on('Download', (command) => {
 	for (const dl of downloadQueue) {
 		if (dl.name === command.name) {
