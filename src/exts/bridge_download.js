@@ -111,6 +111,7 @@ bridge.on('GetModdedMaps', async command => {
 const fs = require('fs');
 const path = require('path');
 const springPlatform = require('../spring_platform');
+const zlib = require('zlib');
 const uninstallingMods = new Set();
 
 bridge.on('UninstallMod', async command => {
@@ -141,7 +142,29 @@ bridge.on('UninstallMod', async command => {
 			throw err;
 		});
 		if (!stat) {
-			throw new Error('No managed .sdd directory found. Rapid .sdp removal is not yet supported safely.');
+			// Rapid stores the package manifest under rapid/packages/<hash>.sdp.
+			// Resolve the exact tag from the trusted repo index, not a directory
+			// search or a filename guessed from the mod ID.
+			const indexPath = path.join(springPlatform.writePath, 'rapid',
+				new URL(CUSTOM_RAPID).hostname, 'versions.gz');
+			const index = zlib.gunzipSync(await fs.promises.readFile(indexPath)).toString('utf8');
+			const matches = index.split(/\\r?\\n/).map(line => line.split(','))
+				.filter(parts => parts[0] === tag && /^[0-9a-fA-F]{32}$/.test(parts[1] || ''));
+			if (matches.length !== 1) {
+				throw new Error('Cannot resolve exactly one Rapid package for ' + tag + '; nothing deleted.');
+			}
+			const hash = matches[0][1].toLowerCase();
+			const pkgPath = path.resolve(springPlatform.writePath, 'rapid', 'packages', hash + '.sdp');
+			const packagesDir = path.resolve(springPlatform.writePath, 'rapid', 'packages');
+			if (path.dirname(pkgPath) !== packagesDir) throw new Error('Unsafe Rapid package path.');
+			const pkgStat = await fs.promises.lstat(pkgPath);
+			if (!pkgStat.isFile() || pkgStat.isSymbolicLink()) throw new Error('Unsafe Rapid package file.');
+			// The Rapid pool is shared with BAR and Hosting. Never delete pool
+			// blocks based solely on one package tag.
+			await fs.promises.unlink(pkgPath);
+			log.info('Removed Rapid package manifest: ' + pkgPath);
+			respond(true);
+			return;
 		}
 		if (!stat.isDirectory() || stat.isSymbolicLink()) {
 			throw new Error('Refusing to remove a non-directory or symbolic link.');
